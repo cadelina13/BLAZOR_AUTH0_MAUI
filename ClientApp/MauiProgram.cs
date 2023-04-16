@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 using MudBlazor.Services;
+using Refit;
 
 namespace ClientApp
 {
@@ -33,6 +34,13 @@ namespace ClientApp
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<AuthenticationStateProvider, Auth0AuthenticationStateProvider>();
             builder.Services.AddMudServices();
+            builder.Services.AddRefitClient<IDataAccess>().ConfigureHttpClient(c =>
+            {
+                //c.BaseAddress = new Uri($"https://localhost:5001/mauiapi");
+
+                // if using emulator
+                c.BaseAddress = new Uri($"https://192.168.254.103:45458/mauiapi");
+            });
             return builder.Build();
         }
     }

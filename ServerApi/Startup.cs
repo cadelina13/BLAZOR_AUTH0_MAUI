@@ -21,10 +21,7 @@ namespace ServerApi
         {
             services.AddDbContextFactory<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add services to the container.
-
             services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
             services.AddAuthentication(options =>
@@ -33,24 +30,16 @@ namespace ServerApi
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
-                options.Authority = "https://dev-auth0-maui-blazor.us.auth0.com/";
-                options.Audience = "https://localhost:5001";
+                options.Authority = Configuration["Auth0:Authority"];
+                options.Audience = Configuration["Auth0:Audience"];
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("read:messages", policy => policy.Requirements.Add(new
-                HasScopeRequirement("read:messages", "https://locahost:5001")));
-            });
-
-            services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
 
             services.AddSwaggerGen(option =>
             {
-                option.SwaggerDoc("v1", new OpenApiInfo { Title = "ServerAPI", Version = "v1" });
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -60,11 +49,7 @@ namespace ServerApi
                     {
                         Implicit = new OpenApiOAuthFlow
                         {
-                            Scopes = new Dictionary<string, string>
-                            {
-                                { "openid", "Open Id" }
-                            },
-                            AuthorizationUrl = new Uri("https://dev-auth0-maui-blazor.us.auth0.com/" + "authorize?audience=" + "https://localhost:5001")
+                            AuthorizationUrl = new Uri($"{Configuration["Auth0:Authority"]}authorize?audience={Configuration["Auth0:Audience"]}")
                         }
                     }
                 });
@@ -92,12 +77,12 @@ namespace ServerApi
             }
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "API");
-                c.OAuthClientId("jhqaFhLQz7TeHyZp5y6XGxZsI7Qb4Yty");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "MAUI Auth0 API");
+                c.OAuthClientId(Configuration["Auth0:ClientId"]);
             });
             app.UseRouting();
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseAuthentication();
             app.UseAuthorization();

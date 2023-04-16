@@ -4,7 +4,7 @@
 @code {
     private string Username = "Anonymous User";
     private string Picture = "";
-
+    AccountModel model = new();
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -15,10 +15,37 @@
                     .Where(c => c.Type.Equals("picture"))
                     .Select(c => c.Value)
                     .FirstOrDefault() ?? string.Empty;
-
+        SaveUpdateUser(state.User);
         await base.OnInitializedAsync();
+    }
+
+    private async void SaveUpdateUser(ClaimsPrincipal claim)
+    {
+        var userId = claim.GetUserId();
+        var user = new AccountModel();
+        user.Id = userId;
+        user.Fullname = claim.Identity.Name;
+        model = await db.UpdateUser(user);
+    }
+    bool isLoading = false;
+    async void saveClick()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        model = await db.UpdateUser(model);
+        snackbar.Add("Profile updated.", Severity.Success);
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
     }
 }
 <h1>Hello, @Username!</h1>
 
 <img src="@Picture">
+
+<MudTextField @bind-Value="model.FirstName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="First Name" />
+<MudTextField @bind-Value="model.LastName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="Last Name" />
+@if (isLoading)
+{
+    <MudProgressLinear Size="Size.Small" Color="Color.Primary" Class="mt-1" Indeterminate />
+}
+<MudButton OnClick="saveClick" Class="mt-2" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">Update</MudButton>

@@ -51,9 +51,19 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="IdentityModel.OidcClient" Version="5.2.1" />
       <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.16" />
       <PackageReference Include="MudBlazor" Version="6.2.2" />
+      <PackageReference Include="Refit" Version="6.3.2" />
+		<PackageReference Include="Refit.HttpClientFactory" Version="6.3.2" />
+	</ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
     </ItemGroup>
 
 </Project>

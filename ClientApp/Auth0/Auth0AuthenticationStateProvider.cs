@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using ClientApp.Data;
+using Microsoft.AspNetCore.Components.Authorization;
+using SharedLibrary.Models;
 using System.Security.Claims;
 
 
@@ -6,10 +8,11 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
 {
     private ClaimsPrincipal currentUser = new ClaimsPrincipal(new ClaimsIdentity());
     private readonly Auth0Client auth0Client;
-
-    public Auth0AuthenticationStateProvider(Auth0Client client)
+    private readonly IDataAccess db;
+    public Auth0AuthenticationStateProvider(Auth0Client client, IDataAccess _db)
     {
         auth0Client = client;
+        this.db = _db;
     }
     public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
         Task.FromResult(new AuthenticationState(currentUser));
@@ -38,6 +41,7 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
         if (!loginResult.IsError)
         {
             authenticatedUser = loginResult.User;
+            SaveUpdateUser(authenticatedUser);
         }
         return authenticatedUser;
     }
@@ -48,5 +52,14 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
         currentUser = new ClaimsPrincipal(new ClaimsIdentity());
         NotifyAuthenticationStateChanged(
             Task.FromResult(new AuthenticationState(currentUser)));
+    }
+
+    private async void SaveUpdateUser(ClaimsPrincipal claim)
+    {
+        var userId = claim.GetUserId();
+        var user = new AccountModel();
+        user.Id = userId;
+        user.Fullname = claim.Identity.Name;
+        await db.UpdateUser(user);
     }
 }

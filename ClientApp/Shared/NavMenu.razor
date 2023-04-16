@@ -3,8 +3,8 @@
 <MudPaper Width="250px" Elevation="0">
     <MudNavMenu>
         <MudDivider Class="my-2" />
-        <MudNavLink Href="/">Home</MudNavLink>
-        <MudNavLink Href="/profile">Profile</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.Prefix" Href="/">Home</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.Prefix" Href="/profile">Profile</MudNavLink>
         <AuthorizeView>
             <Authorized>
                 <MudNavLink OnClick="Logout">Sign Out</MudNavLink>
