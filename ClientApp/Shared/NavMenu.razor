@@ -1,0 +1,32 @@
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudPaper Width="250px" Class="py-3" Elevation="0">
+    <MudNavMenu>
+        <MudText @onclick="@(()=> nav.NavigateTo("/profile"))" Typo="Typo.h6" Class="px-4">Guest</MudText>
+        <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Email</MudText>
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="/">Home</MudNavLink>
+        <AuthorizeView>
+            <Authorized>
+                <MudNavLink OnClick="Logout">Sign Out</MudNavLink>
+            </Authorized>
+            <NotAuthorized>
+                <MudNavLink OnClick="Login">Sign In</MudNavLink>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudNavMenu>
+</MudPaper>
+
+@code{
+    public async Task Login()
+    {
+        await ((Auth0AuthenticationStateProvider)AuthenticationStateProvider)
+            .LogInAsync();
+    }
+
+    public void Logout()
+    {
+        ((Auth0AuthenticationStateProvider)AuthenticationStateProvider)
+            .LogOut();
+    }
+}

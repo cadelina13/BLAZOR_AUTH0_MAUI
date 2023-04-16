@@ -1,0 +1,24 @@
+﻿@page "/profile"
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@code {
+    private string Username = "Anonymous User";
+    private string Picture = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        Username = state.User.Identity.Name ?? string.Empty;
+
+        Picture = state.User.Claims
+                    .Where(c => c.Type.Equals("picture"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+
+        await base.OnInitializedAsync();
+    }
+}
+<h1>Hello, @Username!</h1>
+
+<img src="@Picture">
