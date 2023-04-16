@@ -11,7 +11,6 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
     {
         auth0Client = client;
     }
-
     public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
         Task.FromResult(new AuthenticationState(currentUser));
 

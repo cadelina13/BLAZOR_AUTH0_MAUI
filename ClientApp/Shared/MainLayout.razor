@@ -17,7 +17,7 @@
         <MudDrawerHeader>
             <AuthorizeView>
                 <Authorized>
-                    <MudText Typo="Typo.h5" Class="mt-1">@context.User.Identity.Name</MudText>
+                    <MudText @onclick="@(()=> nav.NavigateTo("/profile"))" Typo="Typo.h6" Class="mt-1">@context.User.Identity.Name</MudText>
                 </Authorized>
             </AuthorizeView>
         </MudDrawerHeader>
