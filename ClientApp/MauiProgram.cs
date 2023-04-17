@@ -1,8 +1,10 @@
 ﻿using ClientApp.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebView.Maui;
+using Microsoft.Maui.Animations;
 using MudBlazor.Services;
 using Refit;
+using System.Net;
 
 namespace ClientApp
 {
@@ -34,12 +36,18 @@ namespace ClientApp
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<AuthenticationStateProvider, Auth0AuthenticationStateProvider>();
             builder.Services.AddMudServices();
+            builder.Services.AddScoped<HttpClient>();
             builder.Services.AddRefitClient<IDataAccess>().ConfigureHttpClient(c =>
             {
-                //c.BaseAddress = new Uri($"https://localhost:5001/mauiapi");
-
                 // if using emulator
-                c.BaseAddress = new Uri($"https://192.168.254.103:45458/mauiapi");
+                if(DeviceInfo.Platform == DevicePlatform.Android)
+                {
+                    c.BaseAddress = new Uri($"http://10.0.2.2:5001/mauiapi");
+                }
+                else
+                {
+                    c.BaseAddress = new Uri($"https://localhost:5001/mauiapi");
+                }
             });
             return builder.Build();
         }

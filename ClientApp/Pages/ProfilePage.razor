@@ -15,16 +15,37 @@
                     .Where(c => c.Type.Equals("picture"))
                     .Select(c => c.Value)
                     .FirstOrDefault() ?? string.Empty;
-        SaveUpdateUser(state.User);
+
+        var userId = state.User.Claims.Where(c => c.Type.Equals("sub"))
+                            .Select(c => c.Value)
+                            .FirstOrDefault() ?? string.Empty;
+        model = await db.GetUser(userId);
         await base.OnInitializedAsync();
     }
 
     private async void SaveUpdateUser(ClaimsPrincipal claim)
     {
-        var userId = claim.GetUserId();
+        var userId = claim.Claims.Where(c => c.Type.Equals("sid"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+        var firstName = claim.Claims.Where(c => c.Type.Equals("given_name"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+        var lastName = claim.Claims.Where(c => c.Type.Equals("family_name"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+        var fullName = claim.Claims.Where(c => c.Type.Equals("name"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+        var picture = claim.Claims.Where(c => c.Type.Equals("picture"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
         var user = new AccountModel();
         user.Id = userId;
-        user.Fullname = claim.Identity.Name;
+        user.Fullname = fullName;
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        user.Picture = picture;
         model = await db.UpdateUser(user);
     }
     bool isLoading = false;
@@ -42,6 +63,7 @@
 
 <img src="@Picture">
 
+<MudTextField @bind-Value="model.Fullname" ReadOnly Class="mt-2" T="string" Variant="Variant.Outlined" Label="Full Name" />
 <MudTextField @bind-Value="model.FirstName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="First Name" />
 <MudTextField @bind-Value="model.LastName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="Last Name" />
 @if (isLoading)

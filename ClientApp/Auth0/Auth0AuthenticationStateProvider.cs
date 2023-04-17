@@ -41,7 +41,7 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
         if (!loginResult.IsError)
         {
             authenticatedUser = loginResult.User;
-            SaveUpdateUser(authenticatedUser);
+            await SaveUpdateUser(authenticatedUser);
         }
         return authenticatedUser;
     }
@@ -54,12 +54,41 @@ public class Auth0AuthenticationStateProvider : AuthenticationStateProvider
             Task.FromResult(new AuthenticationState(currentUser)));
     }
 
-    private async void SaveUpdateUser(ClaimsPrincipal claim)
+    private async Task SaveUpdateUser(ClaimsPrincipal claim)
     {
-        var userId = claim.GetUserId();
-        var user = new AccountModel();
-        user.Id = userId;
-        user.Fullname = claim.Identity.Name;
-        await db.UpdateUser(user);
+        var userId = claim.Claims.Where(c => c.Type.Equals("sub"))
+                    .Select(c => c.Value)
+                    .FirstOrDefault() ?? string.Empty;
+        AccountModel user = new AccountModel();
+        try
+        {
+            user = await db.GetUser(userId);
+        }catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        if(string.IsNullOrEmpty(user.Id))
+        {
+            
+            var firstName = claim.Claims.Where(c => c.Type.Equals("given_name"))
+                        .Select(c => c.Value)
+                        .FirstOrDefault() ?? string.Empty;
+            var lastName = claim.Claims.Where(c => c.Type.Equals("family_name"))
+                        .Select(c => c.Value)
+                        .FirstOrDefault() ?? string.Empty;
+            var fullName = claim.Claims.Where(c => c.Type.Equals("name"))
+                        .Select(c => c.Value)
+                        .FirstOrDefault() ?? string.Empty;
+            var picture = claim.Claims.Where(c => c.Type.Equals("picture"))
+                        .Select(c => c.Value)
+                        .FirstOrDefault() ?? string.Empty;
+            user.Id = userId;
+            user.Fullname = fullName;
+            user.FirstName = firstName;
+            user.LastName = lastName;
+            user.Picture = picture;
+            await db.SaveUser(user);
+        }
+        
     }
 }

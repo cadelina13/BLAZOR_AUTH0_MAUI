@@ -6,8 +6,11 @@ namespace ClientApp.Data
     {
         [Post("/UpdateUser")]
         Task<AccountModel> UpdateUser(AccountModel account);
+        
+        [Post("/SaveUser")]
+        Task<AccountModel> SaveUser(AccountModel account);
 
-        [Get("/GetUser/{username}")]
-        Task<AccountModel> GetUser(string username);
+        [Get("/GetUser/{userId}")]
+        Task<AccountModel> GetUser(string userId);
     }
 }

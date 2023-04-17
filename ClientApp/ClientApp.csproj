@@ -66,4 +66,6 @@
       <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
     </ItemGroup>
 
+    <ProjectExtensions><VisualStudio><UserProperties XamarinHotReloadDebuggerTimeoutExceptionClientAppHideInfoBar="True" /></VisualStudio></ProjectExtensions>
+
 </Project>
