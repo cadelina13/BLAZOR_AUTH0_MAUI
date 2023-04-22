@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using ServerApi.Data;
-using System.Security.Claims;
+using System.Text;
 
 namespace ServerApi
 {
@@ -24,49 +22,48 @@ namespace ServerApi
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
-            services.AddAuthentication(options =>
+            services.AddCors(options =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options =>
-            {
-                options.Authority = Configuration["Auth0:Authority"];
-                options.Audience = Configuration["Auth0:Audience"];
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.AddPolicy("CorsPolicy", b =>
                 {
-                    NameClaimType = ClaimTypes.NameIdentifier
-                };
+                    b.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+                });
             });
+            /*services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddRoles<IdentityRole>();*/
 
-            services.AddSwaggerGen(option =>
+            services.AddDefaultIdentity<IdentityUser>()
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = Configuration["Jwt:Issuer"],
+                        ValidAudience = Configuration["Jwt:Issuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    };
+                });
+            services.AddRouting(options =>
             {
-                option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.OAuth2,
-                    Flows = new OpenApiOAuthFlows
-                    {
-                        Implicit = new OpenApiOAuthFlow
-                        {
-                            AuthorizationUrl = new Uri($"{Configuration["Auth0:Authority"]}authorize?audience={Configuration["Auth0:Audience"]}")
-                        }
-                    }
-                });
-                option.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type=ReferenceType.SecurityScheme,
-                                Id="Bearer"
-                            }
-                        },
-                        new string[]{}
-                    }
-                });
+                options.LowercaseUrls = true;
+            });
+            services.Configure<IdentityOptions>(options =>
+            {
+                // Default Lockout settings.
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireDigit = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredUniqueChars = 0;
+                options.Password.RequiredLength = 3;
             });
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -80,10 +77,12 @@ namespace ServerApi
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "MAUI Auth0 API");
                 c.OAuthClientId(Configuration["Auth0:ClientId"]);
             });
-            app.UseRouting();
 
-            //app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            // Need to be an exact match with the CorsPolicy string above
+            app.UseCors("CorsPolicy");
+
             app.UseAuthentication();
             app.UseAuthorization();
 

@@ -1,7 +1,20 @@
 ﻿@page "/"
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+<AuthorizeView>
+    <Authorized>
+        <MudPaper Class="p-2 mt-5" Outlined>
+            <MudButton StartIcon="@Icons.Material.Outlined.ManageSearch" Color="Color.Primary" FullWidth Variant="Variant.Outlined" Size="Size.Large" Class="mb-3">I am looking for work</MudButton>
+            <MudButton StartIcon="@Icons.Material.Outlined.PersonSearch" Color="Color.Primary" FullWidth Variant="Variant.Outlined" Size="Size.Large">I am looking for employees</MudButton>
+        </MudPaper>
+    </Authorized>
+    <NotAuthorized>
+        <MudPaper Class="p-2 mt-5" Outlined>
+            <MudText Class="mb-5" Align="Align.Center" Color="Color.Primary" Typo="Typo.h5">Welcome back!</MudText>
+            <MudButton Href="/signin" StartIcon="@Icons.Material.Outlined.Login" Color="Color.Primary" FullWidth Variant="Variant.Outlined" Size="Size.Large" Class="mb-3">
+                Sign In
+            </MudButton>
+            <MudButton Href="/register" StartIcon="@Icons.Material.Outlined.AppRegistration" Color="Color.Primary" FullWidth Variant="Variant.Outlined" Size="Size.Large" Class="mb-3">
+                Register
+            </MudButton>
+        </MudPaper>
+    </NotAuthorized>
+</AuthorizeView>

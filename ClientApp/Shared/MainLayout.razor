@@ -1,39 +1,41 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider authProvider
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudIconButton Class="mr-2" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIconButton Href="/profile" Edge="Edge.Start" Variant="Variant.Text" Color="Color.Inherit" Icon="@Icons.Material.Outlined.Person"/>
         <AuthorizeView>
             <Authorized>
-                <MudText Typo="Typo.body1">@context.User.Identity.Name</MudText>
+                <MudText Class="ml-2" Typo="Typo.body1">@context.User.Identity.Name</MudText>
+                <MudSpacer/>
+                <MudIconButton OnClick="SignOut" Variant="Variant.Text" Color="Color.Inherit" Icon="@Icons.Material.Outlined.Logout" />
             </Authorized>
+            <NotAuthorized>
+                <MudText Class="ml-2" @onclick="@(()=> nav.NavigateTo("/"))" Typo="Typo.body1">Home</MudText>
+            </NotAuthorized>
         </AuthorizeView>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
-        <MudDrawerHeader>
-            <AuthorizeView>
-                <Authorized>
-                    <MudText @onclick="@(()=> nav.NavigateTo("/profile"))" Typo="Typo.h6" Class="mt-1">@context.User.Identity.Name</MudText>
-                </Authorized>
-            </AuthorizeView>
-        </MudDrawerHeader>
-        <NavMenu/>
-    </MudDrawer>
     <MudMainContent>
         <MudContainer Class="pt-3" MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
-@code {
-    bool _drawerOpen = true;
-
-    void DrawerToggle()
+@code{
+    private async Task SignOut()
     {
-        _drawerOpen = !_drawerOpen;
+        var token = await SecureStorage.Default.GetAsync("bearerToken");
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            SecureStorage.Default.Remove("bearerToken");
+            ((AppAuthenticationStateProvider)authProvider).SignOut();
+        }
+        StateHasChanged();
+        nav.NavigateTo("/");
     }
 }

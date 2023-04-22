@@ -1,0 +1,40 @@
+﻿@page "/signin"
+@inject AuthenticationStateProvider authenticationStateProvider
+
+@code {
+    AccountModel data = new AccountModel();
+    bool isLoading = false;
+    private async Task SignInUser()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        var token = await db.LoginUser(data);
+        if (!string.IsNullOrEmpty(token))
+        {
+            await SecureStorage.Default.SetAsync("bearerToken", token);
+            nav.NavigateTo("/", true, true);
+        }
+        
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}
+<EditForm Model="data" OnValidSubmit="SignInUser">
+    <MudPaper Class="p-2 mt-5" Outlined>
+        <MudToolBar Class="p-0 mb-4" Dense>
+            <MudIcon Icon="@Icons.Material.Outlined.Lock" Class="mr-3" />
+            <MudText Align="Align.Center" Typo="Typo.h5">Authentication</MudText>
+        </MudToolBar>
+        <MudTextField @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
+        <MudTextField @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
+        @if (isLoading)
+        {
+            <MudProgressLinear Indeterminate Size="Size.Small" Color="Color.Primary" Class="mb-2" />
+        }
+        <p class="text-end">
+            <MudButton ButtonType="ButtonType.Submit" Disabled="isLoading" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Login" DisableElevation Color="Color.Primary">Sign In</MudButton>
+        </p>
+    </MudPaper>
+</EditForm>
+

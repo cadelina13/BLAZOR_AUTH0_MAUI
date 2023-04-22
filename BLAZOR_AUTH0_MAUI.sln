@@ -4,9 +4,9 @@ VisualStudioVersion = 17.0.31611.283
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientApp", "ClientApp\ClientApp.csproj", "{7C63AA0C-4F93-4D3B-930A-02B2228EE824}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerApi", "ServerApi\ServerApi.csproj", "{6A1AF450-BFA8-41FC-BA96-C92332766255}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerApi", "ServerApi\ServerApi.csproj", "{6A1AF450-BFA8-41FC-BA96-C92332766255}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{CFE44A4F-751D-49CB-8637-A9FBFE18FE45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{CFE44A4F-751D-49CB-8637-A9FBFE18FE45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

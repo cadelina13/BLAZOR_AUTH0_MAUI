@@ -1,62 +1,109 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.IdentityModel.Tokens;
 using ServerApi.Data;
 using SharedLibrary.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace ServerApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class MAUIApiController : ControllerBase
     {
         private readonly IDbContextFactory<AppDbContext> _dbFactory;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public MAUIApiController(IDbContextFactory<AppDbContext> dbFactory)
+        public MAUIApiController(IDbContextFactory<AppDbContext> dbFactory, SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IConfiguration configuration)
         {
             _dbFactory = dbFactory;
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _configuration = configuration;
         }
-        [HttpPost("UpdateUser")]
-        public IActionResult UpdateUser(AccountModel account)
+        [AllowAnonymous]
+        [HttpPost("LoginUser")]
+        public async Task<IActionResult> LoginUser(AccountModel account)
         {
             using (var db = _dbFactory.CreateDbContext())
             {
-                var userExist = db.Accounts.Any(x => x.Id == account.Id);
-                db.Accounts.Update(account);
-                db.SaveChanges();
-                return Ok(account);
-            }
-        }
-        [HttpPost("SaveUser")]
-        public IActionResult SaveUser(AccountModel account)
-        {
-            using (var db = _dbFactory.CreateDbContext())
-            {
-                var userId = User.Claims.Where(c => c.Type.Equals("sub"))
-                    .Select(c => c.Value)
-                    .FirstOrDefault() ?? string.Empty;
-                var userExist = db.Accounts.Any(x => x.Id == account.Id);
-                if(!userExist)
+                string username = account.Email;
+                string password = account.Password;
+                Microsoft.AspNetCore.Identity.SignInResult signInResult = await _signInManager.PasswordSignInAsync(username, password, false, false);
+                if (signInResult.Succeeded)
                 {
-                    db.Accounts.Add(account);
-                    db.SaveChanges();
+                    IdentityUser userIdentity = await _userManager.FindByNameAsync(username);
+                    string JSONWebTokenAsString = await GenerateJSONWebToken(userIdentity);
+                    return Ok(JSONWebTokenAsString);
                 }
-                return Ok(account);
+                return Unauthorized(account);
             }
         }
-        [HttpGet("GetUser/{userId}")]
-        public IActionResult GetUser(string userId)
+        [AllowAnonymous]
+        [Route("RegisterUser")]
+        [HttpPost]
+        public async Task<IActionResult> RegisterUser([FromBody] AccountModel user)
         {
-            var userId2 = User.Claims.Where(c => c.Type.Equals("sub"))
-                    .Select(c => c.Value)
-                    .FirstOrDefault() ?? string.Empty;
-            using (var db = _dbFactory.CreateDbContext())
+            string username = user.Email;
+            string password = user.Password;
+            IdentityUser userIdentity = new IdentityUser
             {
-                var user = db.Accounts.Where(x => x.Id == userId).FirstOrDefault();
-                return Ok(user);
+                Email = username,
+                UserName = username
+            };
+            var userIdentityResult = await _userManager.CreateAsync(userIdentity, password);
+            if (userIdentityResult.Succeeded)
+            {
+                return Ok(new { userIdentityResult.Succeeded });
             }
+            string errorsToReturn = "Registration failed with the following errors";
+            foreach (var err in userIdentityResult.Errors)
+            {
+                errorsToReturn += Environment.NewLine;
+                errorsToReturn += $"Error code: {err.Code} - {err.Description}";
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, errorsToReturn);
+        }
+        [HttpGet("GetUser/{email}")]
+        public async Task<IActionResult> GetUser(string email)
+        {
+            var userIdentity = await _userManager.FindByNameAsync(email);
+            return Ok(userIdentity);
+        }
+
+        [NonAction]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private async Task<string> GenerateJSONWebToken(IdentityUser userIdentity)
+        {
+            SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            SigningCredentials credentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+            // Claim = the person trying to sign in claiming to be
+            var claims = new List<Claim>()
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, userIdentity.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userIdentity.Id),
+        };
+            var roleNames = await _userManager.GetRolesAsync(userIdentity);
+            claims.AddRange(roleNames.Select(roleName => new Claim(ClaimsIdentity.DefaultNameClaimType, roleName)));
+            JwtSecurityToken token = new JwtSecurityToken
+                (
+                    _configuration["Jwt:Issuer"],
+                    _configuration["Jwt:Issuer"],
+                    claims,
+                    null,
+                    expires: DateTime.UtcNow.AddDays(28),
+                    credentials
+                );
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -8,11 +9,10 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Models
 {
-    public class AccountModel
+    public class AccountModel : IdentityUser
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Key]
-        public string Id { get; set; }
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
         public string Fullname { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }

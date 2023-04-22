@@ -1,0 +1,40 @@
+﻿@page "/register"
+@code {
+    AccountModel data = new();
+    bool isLoading = false;
+    private async Task RegisterUser()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        var result = await db.SaveUser(data);
+        if (result != null && !string.IsNullOrEmpty(result.Id))
+        {
+            data = new();
+            nav.NavigateTo("/signin");
+            snackbar.Add("Registration successful!", Severity.Success);
+            return;
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}
+<EditForm Model="data" OnValidSubmit="RegisterUser">
+    <MudPaper Class="p-2 mt-5" Outlined>
+        <MudToolBar Class="p-0 mb-4" Dense>
+            <MudIcon Icon="@Icons.Material.Outlined.AppRegistration" Class="mr-3" />
+            <MudText Align="Align.Center" Typo="Typo.h5">Registration</MudText>
+        </MudToolBar>
+        <MudTextField @bind-Value="data.FirstName" Disabled="isLoading" Label="First Name" Placeholder="Enter first name" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Edit" Class="mb-4" />
+        <MudTextField @bind-Value="data.LastName" Disabled="isLoading" Label="Last Name" Placeholder="Enter last name" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Edit" Class="mb-4" />
+        <MudTextField @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" InputType="InputType.Email" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
+        <MudTextField @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
+        @if (isLoading)
+        {
+            <MudProgressLinear Indeterminate Size="Size.Small" Color="Color.Primary" Class="mb-2"/>
+        }
+        <p class="text-end">
+            <MudButton ButtonType="ButtonType.Submit" Disabled="isLoading" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Save" DisableElevation Color="Color.Primary">Register</MudButton>
+        </p>
+    </MudPaper>
+</EditForm>
+

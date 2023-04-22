@@ -1,4 +1,5 @@
-﻿using ClientApp.Data;
+﻿using Blazored.LocalStorage;
+using ClientApp.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 using Microsoft.Maui.Animations;
@@ -24,31 +25,25 @@ namespace ClientApp
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
+            builder.Services.AddBlazoredLocalStorage();
 
-            builder.Services.AddSingleton<WeatherForecastService>();
-            builder.Services.AddSingleton(new Auth0Client(new()
-            {
-                Domain = "dev-auth0-maui-blazor.us.auth0.com",
-                ClientId = "jhqaFhLQz7TeHyZp5y6XGxZsI7Qb4Yty",
-                Scope = "openid profile",
-                RedirectUri = "myapp://callback"
-            }));
-            builder.Services.AddAuthorizationCore();
-            builder.Services.AddScoped<AuthenticationStateProvider, Auth0AuthenticationStateProvider>();
-            builder.Services.AddMudServices();
             builder.Services.AddScoped<HttpClient>();
+            builder.Services.AddScoped<AppAuthenticationStateProvider>();
+            builder.Services.AddScoped<AuthHeaderHandler>();
+            builder.Services.AddScoped<AuthenticationStateProvider>(options => options.GetRequiredService<AppAuthenticationStateProvider>());
+            builder.Services.AddAuthorizationCore();
+            builder.Services.AddMudServices();
             builder.Services.AddRefitClient<IDataAccess>().ConfigureHttpClient(c =>
             {
-                // if using emulator
-                if(DeviceInfo.Platform == DevicePlatform.Android)
+                if (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS)
                 {
                     c.BaseAddress = new Uri($"http://10.0.2.2:5001/mauiapi");
                 }
                 else
                 {
-                    c.BaseAddress = new Uri($"https://localhost:5001/mauiapi");
+                    c.BaseAddress = new Uri($"http://localhost:5001/mauiapi");
                 }
-            });
+            }).AddHttpMessageHandler<AuthHeaderHandler>();
             return builder.Build();
         }
     }
