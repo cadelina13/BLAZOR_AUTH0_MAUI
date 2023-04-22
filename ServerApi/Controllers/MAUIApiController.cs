@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClientApp.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,16 +19,51 @@ namespace ServerApi.Controllers
     public class MAUIApiController : ControllerBase
     {
         private readonly IDbContextFactory<AppDbContext> _dbFactory;
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<AccountModel> _signInManager;
+        private readonly UserManager<AccountModel> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _email;
+        private static Random random = new Random();
 
-        public MAUIApiController(IDbContextFactory<AppDbContext> dbFactory, SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IConfiguration configuration)
+        private static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        public MAUIApiController(IDbContextFactory<AppDbContext> dbFactory, SignInManager<AccountModel> signInManager, UserManager<AccountModel> userManager, IConfiguration configuration, IEmailService email)
         {
             _dbFactory = dbFactory;
             _signInManager = signInManager;
             _userManager = userManager;
             _configuration = configuration;
+            _email = email;
+        }
+        [Authorize]
+        [HttpPost("ChangePassword")]
+        public async Task<IActionResult> ChangePassword(PasswordResetViewModel model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            var rs = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if(rs.Succeeded)
+            {
+                return Ok(user);
+            }
+            return BadRequest();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("ResetPassword/{email}")]
+        public async Task<IActionResult> ResetPassword(string email)
+        {
+            string generatedPassword = RandomString(8);
+            var user = await _userManager.FindByEmailAsync(email);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            await _userManager.ResetPasswordAsync(user, token, generatedPassword);
+            string body = $"Your new password is: {generatedPassword}";
+            await _email.SendEmail(email, body);
+            return Ok();
         }
         [AllowAnonymous]
         [HttpPost("LoginUser")]
@@ -40,7 +76,7 @@ namespace ServerApi.Controllers
                 Microsoft.AspNetCore.Identity.SignInResult signInResult = await _signInManager.PasswordSignInAsync(username, password, false, false);
                 if (signInResult.Succeeded)
                 {
-                    IdentityUser userIdentity = await _userManager.FindByNameAsync(username);
+                    var userIdentity = await _userManager.FindByNameAsync(username);
                     string JSONWebTokenAsString = await GenerateJSONWebToken(userIdentity);
                     return Ok(JSONWebTokenAsString);
                 }
@@ -52,14 +88,10 @@ namespace ServerApi.Controllers
         [HttpPost]
         public async Task<IActionResult> RegisterUser([FromBody] AccountModel user)
         {
-            string username = user.Email;
             string password = user.Password;
-            IdentityUser userIdentity = new IdentityUser
-            {
-                Email = username,
-                UserName = username
-            };
-            var userIdentityResult = await _userManager.CreateAsync(userIdentity, password);
+            user.UserName = user.Email;
+            user.Password = null;
+            var userIdentityResult = await _userManager.CreateAsync(user, password);
             if (userIdentityResult.Succeeded)
             {
                 return Ok(new { userIdentityResult.Succeeded });
@@ -78,10 +110,24 @@ namespace ServerApi.Controllers
             var userIdentity = await _userManager.FindByNameAsync(email);
             return Ok(userIdentity);
         }
+        [Authorize]
+        [HttpPost("UpdateUser")]
+        public async Task<IActionResult> UpdateUser(AccountModel account)
+        {
+            var user = await _userManager.FindByNameAsync(account.UserName);
+            user.FirstName = account.FirstName;
+            user.LastName = account.LastName;
+            var result = await _userManager.UpdateAsync(user);
+            if(result.Succeeded)
+            {
+                return Ok(user);
+            }
+            return BadRequest();
+        }
 
         [NonAction]
         [ApiExplorerSettings(IgnoreApi = true)]
-        private async Task<string> GenerateJSONWebToken(IdentityUser userIdentity)
+        private async Task<string> GenerateJSONWebToken(AccountModel userIdentity)
         {
             SymmetricSecurityKey symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             SigningCredentials credentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);

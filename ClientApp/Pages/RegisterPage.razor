@@ -6,13 +6,20 @@
     {
         isLoading = true;
         await InvokeAsync(StateHasChanged);
-        var result = await db.SaveUser(data);
-        if (result != null && !string.IsNullOrEmpty(result.Id))
+        try
         {
-            data = new();
-            nav.NavigateTo("/signin");
-            snackbar.Add("Registration successful!", Severity.Success);
-            return;
+            var result = await db.SaveUser(data);
+            if (result != null && !string.IsNullOrEmpty(result.Id))
+            {
+                data = new();
+                nav.NavigateTo("/signin");
+                snackbar.Add("Registration successful!", Severity.Success);
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            snackbar.Add("Something went wrong. Please try again.", Severity.Error);
         }
         isLoading = false;
         await InvokeAsync(StateHasChanged);
@@ -26,14 +33,14 @@
         </MudToolBar>
         <MudTextField @bind-Value="data.FirstName" Disabled="isLoading" Label="First Name" Placeholder="Enter first name" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Edit" Class="mb-4" />
         <MudTextField @bind-Value="data.LastName" Disabled="isLoading" Label="Last Name" Placeholder="Enter last name" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Edit" Class="mb-4" />
-        <MudTextField @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" InputType="InputType.Email" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
-        <MudTextField @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
+        <MudTextField Immediate Required @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" InputType="InputType.Email" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
+        <MudTextField Immediate Required @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
         @if (isLoading)
         {
-            <MudProgressLinear Indeterminate Size="Size.Small" Color="Color.Primary" Class="mb-2"/>
+            <MudProgressLinear Indeterminate Size="Size.Small" Color="Color.Primary" Class="mb-2" />
         }
         <p class="text-end">
-            <MudButton ButtonType="ButtonType.Submit" Disabled="isLoading" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Save" DisableElevation Color="Color.Primary">Register</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Disabled="@(isLoading || string.IsNullOrEmpty(data.Email) || string.IsNullOrEmpty(data.Password))" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Save" DisableElevation Color="Color.Primary">Register</MudButton>
         </p>
     </MudPaper>
 </EditForm>

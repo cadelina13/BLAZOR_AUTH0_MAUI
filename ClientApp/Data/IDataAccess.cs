@@ -4,6 +4,12 @@ namespace ClientApp.Data
 {
     public interface IDataAccess
     {
+        [Post("/ChangePassword")]
+        Task<AccountModel> ChangePassword(PasswordResetViewModel model);
+
+        [Get("/ResetPassword/{email}")]
+        Task ResetPassword(string email);
+
         [Post("/UpdateUser")]
         Task<AccountModel> UpdateUser(AccountModel account);
         

@@ -9,24 +9,54 @@
         var state = await ((AppAuthenticationStateProvider)authProvider).GetAuthenticationStateAsync();
         if (state.User.Identity.IsAuthenticated)
         {
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
             model = await db.GetUser(state.User.Identity.Name);
+            isLoading = false;
             await InvokeAsync(StateHasChanged);
         }
-        
+
         await base.OnInitializedAsync();
     }
 
     bool isLoading = false;
-    
-}
-<h1>Hello, @model.FirstName!</h1>
+    async Task UpdateClick()
+    {
 
-<MudTextField Disabled @bind-Value="model.Email" ReadOnly Class="mt-2" T="string" Variant="Variant.Outlined" Label="Email" />
-<MudTextField @bind-Value="model.FirstName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="First Name" />
-<MudTextField @bind-Value="model.LastName" Class="mt-2" T="string" Variant="Variant.Outlined" Label="Last Name" />
-<MudTextField @bind-Value="model.PhoneNumber" Class="mt-2" T="string" Variant="Variant.Outlined" Label="PhoneNumber" />
-@if (isLoading)
-{
-    <MudProgressLinear Size="Size.Small" Color="Color.Primary" Class="mt-1" Indeterminate />
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var rs = await db.UpdateUser(model);
+            if (rs != null)
+            {
+                snackbar.Add("Profile updated!", Severity.Success);
+                model = rs;
+                await InvokeAsync(StateHasChanged);
+            }
+        }catch(Exception e){}
+
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async Task ChangePassClick()
+    {
+        var d = await dialog.Show<DialogPasswordChange>("Password", new DialogParameters(){ ["Email"] = model.Email }).Result;
+
+    }
 }
-<MudButton Class="mt-2" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">Update</MudButton>
+<h1 class="mb-3">Hello, @model.FirstName!</h1>
+<EditForm Model="model" OnValidSubmit="UpdateClick">
+    <MudTextField Disabled @bind-Value="model.Email" ReadOnly Class="mt-3" T="string" Variant="Variant.Outlined" Label="Email" />
+    <MudTextField Disabled="isLoading" @bind-Value="model.FirstName" Class="mt-3" T="string" Variant="Variant.Outlined" Label="First Name" />
+    <MudTextField Disabled="isLoading" @bind-Value="model.LastName" Class="mt-3" T="string" Variant="Variant.Outlined" Label="Last Name" />
+    @if (isLoading)
+    {
+        <MudProgressLinear Size="Size.Small" Color="Color.Primary" Class="mt-1" Indeterminate />
+    }
+    <MudToolBar Dense Class="p-0 mt-3">
+        <MudButton Disabled="isLoading" OnClick="ChangePassClick" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Outlined.LockReset">Change Password</MudButton>
+        <MudSpacer/>
+        <MudButton OnClick="UpdateClick" Color="Color.Primary" Variant="Variant.Filled" DisableElevation Size="Size.Small" StartIcon="@Icons.Material.Outlined.Save">Update</MudButton>
+    </MudToolBar>
+</EditForm>

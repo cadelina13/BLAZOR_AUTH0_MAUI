@@ -4,18 +4,25 @@
 @code {
     AccountModel data = new AccountModel();
     bool isLoading = false;
+    string errMessage = "";
     private async Task SignInUser()
     {
+        errMessage = "";
         isLoading = true;
         await InvokeAsync(StateHasChanged);
-
-        var token = await db.LoginUser(data);
-        if (!string.IsNullOrEmpty(token))
+        try
         {
-            await SecureStorage.Default.SetAsync("bearerToken", token);
-            nav.NavigateTo("/", true, true);
+            var token = await db.LoginUser(data);
+            if (!string.IsNullOrEmpty(token))
+            {
+                await SecureStorage.Default.SetAsync("bearerToken", token);
+                nav.NavigateTo("/", true, true);
+            }
+        }catch(Exception e)
+        {
+            errMessage = "Username or password is incorrect.";
         }
-        
+
         isLoading = false;
         await InvokeAsync(StateHasChanged);
     }
@@ -26,14 +33,21 @@
             <MudIcon Icon="@Icons.Material.Outlined.Lock" Class="mr-3" />
             <MudText Align="Align.Center" Typo="Typo.h5">Authentication</MudText>
         </MudToolBar>
-        <MudTextField @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
-        <MudTextField @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
+        <MudTextField Immediate Required @bind-Value="data.Email" Disabled="isLoading" Label="Email" Placeholder="Enter email" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Email" Class="mb-4" />
+        <MudTextField Immediate Required @bind-Value="data.Password" Disabled="isLoading" Label="Password" Placeholder="Enter password" InputType="InputType.Password" T="string" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.LockOpen" Class="mb-4" />
         @if (isLoading)
         {
             <MudProgressLinear Indeterminate Size="Size.Small" Color="Color.Primary" Class="mb-2" />
         }
+        @if (!string.IsNullOrEmpty(errMessage))
+        {
+            <MudAlert Class="mb-3" Dense Variant="Variant.Outlined" Severity="Severity.Error">
+                @errMessage
+            </MudAlert>
+        }
+        <MudLink Href="/forgotpassword" Color="Color.Primary" Typo="Typo.caption" Underline="Underline.Hover">Forgot password?</MudLink>
         <p class="text-end">
-            <MudButton ButtonType="ButtonType.Submit" Disabled="isLoading" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Login" DisableElevation Color="Color.Primary">Sign In</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Disabled="@(isLoading || string.IsNullOrEmpty(data.Email) || string.IsNullOrEmpty(data.Password))" Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Login" DisableElevation Color="Color.Primary">Sign In</MudButton>
         </p>
     </MudPaper>
 </EditForm>

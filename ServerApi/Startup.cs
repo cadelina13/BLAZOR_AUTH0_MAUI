@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using ClientApp.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ServerApi.Data;
+using SharedLibrary.Models;
 using System.Text;
 
 namespace ServerApi
@@ -18,7 +20,7 @@ namespace ServerApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContextFactory<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
+            services.AddSingleton<IEmailService, EmailService>();
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
@@ -34,7 +36,7 @@ namespace ServerApi
             /*services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddRoles<IdentityRole>();*/
 
-            services.AddDefaultIdentity<IdentityUser>()
+            services.AddDefaultIdentity<AccountModel>()
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

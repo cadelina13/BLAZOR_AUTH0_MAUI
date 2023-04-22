@@ -13,10 +13,8 @@ namespace SharedLibrary.Models
     {
         [DataType(DataType.Password)]
         public string Password { get; set; }
-        public string Fullname { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string Picture { get; set; }
         public DateTime DateCreated { get; set; }
         public AccountModel()
         {

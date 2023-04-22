@@ -2,22 +2,24 @@
 @inject AuthenticationStateProvider authProvider
 
 <MudThemeProvider />
-<MudDialogProvider />
+<MudDialogProvider FullWidth="true"
+                   DisableBackdropClick="true"
+                   CloseButton="true"
+                   Position="DialogPosition.TopCenter" />
 <MudSnackbarProvider />
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Dense Elevation="25">
         <MudIconButton Href="/profile" Edge="Edge.Start" Variant="Variant.Text" Color="Color.Inherit" Icon="@Icons.Material.Outlined.Person"/>
         <AuthorizeView>
             <Authorized>
-                <MudText Class="ml-2" Typo="Typo.body1">@context.User.Identity.Name</MudText>
+                <MudLink Color="Color.Inherit" Class="ml-2" Href="/" Typo="Typo.body1">@context.User.Identity.Name</MudLink>
                 <MudSpacer/>
                 <MudIconButton OnClick="SignOut" Variant="Variant.Text" Color="Color.Inherit" Icon="@Icons.Material.Outlined.Logout" />
             </Authorized>
             <NotAuthorized>
-                <MudText Class="ml-2" @onclick="@(()=> nav.NavigateTo("/"))" Typo="Typo.body1">Home</MudText>
+                <MudLink Color="Color.Inherit" Class="ml-2" Href="/" Typo="Typo.body1">Home</MudLink>
             </NotAuthorized>
         </AuthorizeView>
-        <MudSpacer />
     </MudAppBar>
     <MudMainContent>
         <MudContainer Class="pt-3" MaxWidth="MaxWidth.ExtraLarge">
@@ -25,17 +27,21 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
-@code{
+    @code{
     private async Task SignOut()
     {
-        var token = await SecureStorage.Default.GetAsync("bearerToken");
-
-        if (!string.IsNullOrEmpty(token))
+        var msg = await dialog.ShowMessageBox("Sign Out", "You are about to end your session. Are you sure?", yesText: "Sign Out", noText: "Cancel");
+        if(msg.HasValue && msg.Value)
         {
-            SecureStorage.Default.Remove("bearerToken");
-            ((AppAuthenticationStateProvider)authProvider).SignOut();
+            var token = await SecureStorage.Default.GetAsync("bearerToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                SecureStorage.Default.Remove("bearerToken");
+                ((AppAuthenticationStateProvider)authProvider).SignOut();
+            }
+            StateHasChanged();
+            nav.NavigateTo("/");
         }
-        StateHasChanged();
-        nav.NavigateTo("/");
+        
     }
 }
